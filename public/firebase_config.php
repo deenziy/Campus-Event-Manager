@@ -8,4 +8,5 @@ $factory = (new Factory)
     ->withDatabaseUri('https://campus-event-manager-ae4d1-default-rtdb.asia-southeast1.firebasedatabase.app/');
 
 $database = $factory->createDatabase();
+$auth = $factory->createAuth();
 ?>
