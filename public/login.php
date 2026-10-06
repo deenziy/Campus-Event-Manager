@@ -4,6 +4,7 @@ require 'firebase_config.php';
 
 $errorMsg = null;
 $logoutMsg = isset($_GET['logged_out']) ? "Kamu berhasil logout." : null;
+$verifiedMsg = isset($_GET['verified']) ? "Email berhasil diverifikasi! Silakan login." : null;
 
 // Kalau sudah login, langsung lempar ke halaman utama
 if (isset($_SESSION['user_email'])) {
@@ -18,13 +19,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     try {
         $signInResult = $auth->signInWithEmailAndPassword($email, $password);
 
-        $_SESSION['user_email'] = $email;
-        $_SESSION['user_uid']   = $signInResult->firebaseUserId();
+        // Cek status verifikasi email dari Firebase Authentication
+        $firebaseUser = $auth->getUser($signInResult->firebaseUserId());
 
-        header("Location: index.php");
-        exit;
-    } catch (Exception $e) {
-        $errorMsg = "Login gagal. Periksa kembali email dan password kamu.";
+        if (!$firebaseUser->emailVerified) {
+            $errorMsg = "Email belum diverifikasi. Silakan cek email kamu untuk link verifikasi sebelum login.";
+        } else {
+            $_SESSION['user_email'] = $email;
+            $_SESSION['user_uid']   = $signInResult->firebaseUserId();
+
+            header("Location: index.php");
+            exit;
+        }
+    } catch (\Kreait\Firebase\Exception\Auth\UserNotFound $e) {
+        $errorMsg = "Akun tidak ditemukan. Periksa kembali email kamu atau daftar akun baru.";
+    } catch (\Throwable $e) {
+        $msg = $e->getMessage();
+
+        if (str_contains($msg, 'EMAIL_NOT_FOUND')) {
+            $errorMsg = "Akun tidak ditemukan. Periksa kembali email kamu atau daftar akun baru.";
+        } elseif (
+            str_contains($msg, 'INVALID_PASSWORD') ||
+            str_contains($msg, 'INVALID_LOGIN_CREDENTIALS')
+        ) {
+            $errorMsg = "Password salah. Silakan coba lagi.";
+        } else {
+            $errorMsg = "Login gagal. Periksa kembali email dan password kamu.";
+        }
     }
 }
 ?>
@@ -55,6 +76,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                 <?php if ($logoutMsg): ?>
                     <div class="alert alert-success"><?= htmlspecialchars($logoutMsg) ?></div>
+                <?php endif; ?>
+
+                <?php if ($verifiedMsg): ?>
+                    <div class="alert alert-success"><?= htmlspecialchars($verifiedMsg) ?></div>
                 <?php endif; ?>
 
                 <?php if ($errorMsg): ?>

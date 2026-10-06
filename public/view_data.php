@@ -1,7 +1,7 @@
 <?php
+require 'auth_check.php';
 require 'firebase_config.php';
 
-// Ambil semua data dari node "events"
 $events = $database->getReference('events')->getValue();
 ?>
 
@@ -19,6 +19,16 @@ $events = $database->getReference('events')->getValue();
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+    <nav class="navbar navbar-light bg-white border-bottom">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">Campus Event Manager</span>
+            <div class="d-flex align-items-center gap-3">
+                <span class="text-muted small"><?= htmlspecialchars($_SESSION['user_email']) ?></span>
+                <a href="logout.php" class="btn btn-sm btn-outline-danger">Logout</a>
+            </div>
+        </div>
+    </nav>
 
     <div class="container py-5">
 

@@ -1,4 +1,5 @@
 <?php
+require 'auth_check.php';
 require 'firebase_config.php';
 
 $id = $_GET['id'];

@@ -10,13 +10,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $password = $_POST['password'];
 
     try {
-        $auth->createUser([
-            'email'         => $email,
-            'password'      => $password,
-            'displayName'   => $name,
+        $createdUser = $auth->createUser([
+            'email'       => $email,
+            'password'    => $password,
+            'displayName' => $name,
         ]);
 
-        $successMsg = "Registrasi berhasil! Silakan login.";
+      
+        $scheme  = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $baseUrl = $scheme . '://' . $_SERVER['HTTP_HOST'];
+
+        $actionCodeSettings = [
+            'continueUrl'   => $baseUrl . '/verify.php?email=' . urlencode($email),
+            'handleCodeInApp' => false,
+        ];
+
+        $auth->sendEmailVerificationLink($email, $actionCodeSettings);
+
+        $userData = [
+            'name'        => $name,
+            'email'       => $email,
+            'is_verified' => false,
+        ];
+        $database->getReference('users/' . md5($email))->set($userData);
+
+        $successMsg = "Registrasi berhasil! Silakan cek email kamu untuk link verifikasi sebelum login.";
     } catch (\Kreait\Firebase\Exception\Auth\EmailExists $e) {
         $errorMsg = "Email sudah terdaftar. Silakan login.";
     } catch (Exception $e) {
@@ -56,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <?php if ($successMsg): ?>
                     <div class="alert alert-success">
                         <?= htmlspecialchars($successMsg) ?>
-                        <a href="login.php" class="alert-link">Login sekarang</a>
+                        <br><a href="login.php" class="alert-link">Ke halaman login</a>
                     </div>
                 <?php else: ?>
 
